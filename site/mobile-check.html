@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Mobile diagnostic</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: #11141c;
+    color: #f5f7fa;
+    font: 15px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+    padding-bottom: 220px;
+  }
+
+  /* Three reference bars. Where each one LANDS on your screen is the answer. */
+  .barFixedTop {
+    position: fixed; top: 0; left: 0; right: 0; height: 44px; z-index: 30;
+    background: #d92d20; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; letter-spacing: .04em;
+  }
+  .barStickyTop {
+    position: sticky; top: 0; z-index: 20; height: 44px;
+    background: #1f6feb; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; letter-spacing: .04em;
+  }
+  .barFixedBottom {
+    position: fixed; left: 0; right: 0; bottom: 0; height: 40px; z-index: 30;
+    background: #12805c; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; letter-spacing: .04em;
+  }
+  .barInsetBottom {
+    position: fixed; z-index: 29;
+    left: 12px; right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    height: 46px; border-radius: 999px;
+    background: #f5f7fa; color: #11141c;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+  }
+
+  /* Spacer so the top bars have something to overlap, mimicking the real site. */
+  .stripe {
+    height: 120px;
+    background: repeating-linear-gradient(45deg, #2b3550 0 14px, #202840 14px 28px);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: #aab4cc;
+  }
+
+  .panel {
+    margin: 16px 12px; padding: 14px 16px;
+    background: #1b2030; border: 1px solid #2c3346; border-radius: 12px;
+  }
+  .panel h2 { margin: 0 0 10px; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; color: #8fa9ff; }
+  .row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px solid #262d3e; }
+  .row:last-child { border-bottom: 0; }
+  .row b { font-weight: 700; color: #fff; text-align: right; }
+  .big { font-size: 19px; }
+  .note { margin: 16px 12px; color: #98a2b3; font-family: -apple-system, system-ui, sans-serif; font-size: 14px; line-height: 1.5; }
+  .filler { height: 700px; background: linear-gradient(#151a26, #11141c); display:flex; align-items:center; justify-content:center; color:#4a5468; }
+</style>
+</head>
+<body>
+
+<div class="barFixedTop">RED &mdash; position: fixed, top 0</div>
+
+<div class="stripe">page content behind the bars</div>
+<div class="barStickyTop">BLUE &mdash; position: sticky, top 0</div>
+<div class="stripe">page content below</div>
+
+<div class="note">
+  Scroll down a little, then screenshot this whole screen.<br>
+  What matters: where the RED and BLUE bars sit relative to your clock and battery,
+  and whether the WHITE pill at the bottom is covered by Safari's address bar.
+</div>
+
+<div class="panel">
+  <h2>Safe area insets</h2>
+  <div class="row"><span>top</span><b class="big" id="sat">?</b></div>
+  <div class="row"><span>bottom</span><b class="big" id="sab">?</b></div>
+  <div class="row"><span>left / right</span><b id="salr">?</b></div>
+</div>
+
+<div class="panel">
+  <h2>Where the bars actually are</h2>
+  <div class="row"><span>RED fixed top edge</span><b class="big" id="redtop">?</b></div>
+  <div class="row"><span>BLUE sticky top edge</span><b class="big" id="bluetop">?</b></div>
+  <div class="row"><span>scroll position</span><b id="sy">?</b></div>
+</div>
+
+<div class="panel">
+  <h2>Viewport</h2>
+  <div class="row"><span>window inner</span><b id="win">?</b></div>
+  <div class="row"><span>visual viewport</span><b id="vv">?</b></div>
+  <div class="row"><span>visual offsetTop</span><b class="big" id="vvo">?</b></div>
+  <div class="row"><span>documentElement client</span><b id="de">?</b></div>
+  <div class="row"><span>devicePixelRatio</span><b id="dpr">?</b></div>
+</div>
+
+<div class="panel">
+  <h2>Browser</h2>
+  <div class="row"><span>standalone</span><b id="standalone">?</b></div>
+  <div class="row"><span>UA</span><b id="ua" style="font-size:11px;max-width:62%;word-break:break-all">?</b></div>
+</div>
+
+<div class="filler">keep scrolling &mdash; the bars should stay put</div>
+<div class="filler">still scrolling</div>
+
+<div class="barInsetBottom">WHITE &mdash; bottom: 12px + safe area</div>
+<div class="barFixedBottom">GREEN &mdash; position: fixed, bottom 0</div>
+
+<script>
+(function () {
+  var probe = document.createElement('div');
+  probe.style.cssText =
+    'position:fixed;top:0;left:0;width:0;height:0;visibility:hidden;' +
+    'padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);' +
+    'padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);';
+  document.body.appendChild(probe);
+
+  function txt(id, v) { document.getElementById(id).textContent = v; }
+  function px(n) { return Math.round(n) + 'px'; }
+
+  function update() {
+    var cs = getComputedStyle(probe);
+    txt('sat', cs.paddingTop);
+    txt('sab', cs.paddingBottom);
+    txt('salr', cs.paddingLeft + ' / ' + cs.paddingRight);
+
+    txt('redtop', px(document.querySelector('.barFixedTop').getBoundingClientRect().top));
+    txt('bluetop', px(document.querySelector('.barStickyTop').getBoundingClientRect().top));
+    txt('sy', px(window.pageYOffset));
+
+    txt('win', window.innerWidth + ' x ' + window.innerHeight);
+    var vv = window.visualViewport;
+    txt('vv', vv ? Math.round(vv.width) + ' x ' + Math.round(vv.height) : 'not supported');
+    txt('vvo', vv ? px(vv.offsetTop) : 'n/a');
+    txt('de', document.documentElement.clientWidth + ' x ' + document.documentElement.clientHeight);
+    txt('dpr', String(window.devicePixelRatio));
+    txt('standalone', String(!!window.navigator.standalone));
+    txt('ua', navigator.userAgent);
+  }
+
+  update();
+  window.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', update);
+    window.visualViewport.addEventListener('scroll', update);
+  }
+})();
+</script>
+</body>
+</html>
