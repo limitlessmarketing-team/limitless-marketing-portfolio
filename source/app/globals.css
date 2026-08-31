@@ -1,0 +1,579 @@
+@import "tailwindcss";
+
+/* ============================================================================
+   Limitless — dark premium theme
+   Near-black base with a blue undertone, ambient aurora glows, hairline rules
+   and a fine grain overlay. Primary CTAs are white pills (18.8:1) rather than
+   white-on-blue (3.7:1), which reads more premium and passes AA for small text.
+   ========================================================================== */
+
+:root {
+  --void: #05070c;        /* page base */
+  --surface: #0a0e17;     /* alternating bands */
+  --raised: rgba(255, 255, 255, .045);
+  --raised-2: rgba(255, 255, 255, .075);
+  --hairline: rgba(255, 255, 255, .09);
+  --hairline-2: rgba(255, 255, 255, .16);
+  --text: #f5f7fa;        /* 18.8:1 on --void */
+  --muted: #98a2b3;       /*  7.8:1 on --void */
+  --accent: #4d7cfe;
+  --accent-soft: #8fa9ff; /*  8.9:1 on --void */
+  --glow: rgba(77, 124, 254, .38);
+  --radius: 22px;
+  --ease: cubic-bezier(.22, .8, .28, 1);
+  /* SF Pro on macOS, Segoe on Windows — the display weight is what gives the
+     headlines their Apple-ish tightness, so no webfont is loaded. */
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Segoe UI Variable", "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+/* Scrolling is driven by JS in app/site-chrome.tsx — CSS smooth scroll is
+   unreliable in some Chrome builds and would fight the animation. */
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 90px; }
+body {
+  margin: 0;
+  background: var(--void);
+  color: var(--text);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Contain the decorative aura overflow WITHOUT clipping on <body>.
+   Two reasons this lives here and not on <body>:
+   - `overflow-x: hidden` on <body> makes it a scroll container, which silently
+     breaks every anchor link on the page.
+   - even `clip` on <body> makes it a clip context for the sticky header, and
+     iOS Safari then offsets the header instead of pinning it to the viewport.
+   <main> and <footer> are siblings of the header, so clipping them is safe. */
+main,
+footer { overflow-x: clip; }
+
+/* Fine grain — keeps large flat dark areas from banding and reads as depth. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+  opacity: .028;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; height: auto; }
+ul { list-style: none; margin: 0; padding: 0; }
+
+.shell { width: min(1200px, calc(100% - 48px)); margin-inline: auto; }
+
+:focus-visible { outline: 2px solid var(--accent-soft); outline-offset: 3px; border-radius: 4px; }
+
+.srOnly {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+.skipLink {
+  position: fixed; z-index: 300; padding: 12px 20px;
+  top: calc(12px + env(safe-area-inset-top, 0px));
+  left: calc(12px + env(safe-area-inset-left, 0px));
+  background: var(--text); color: var(--void); border-radius: 999px;
+  font-size: 13px; font-weight: 700; letter-spacing: -.01em;
+  transform: translateY(-200%); transition: transform .2s var(--ease);
+}
+.skipLink:focus-visible { transform: translateY(0); }
+
+/* Shared type -------------------------------------------------------------- */
+
+.kicker {
+  display: block; font-size: 11px; font-weight: 700; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--accent-soft);
+}
+
+h1, h2, h3 { font-weight: 700; letter-spacing: -.035em; }
+
+h1 {
+  /* Short single-line headline, so it can run larger than a wrapping one and
+     max-width is left open to keep it on one line at desktop widths. */
+  font-size: clamp(46px, 7.4vw, 104px);
+  line-height: 1.02; letter-spacing: -.05em; margin: 0;
+  font-weight: 800;
+}
+h1 em {
+  font-style: normal; font-weight: 800;
+  color: var(--accent-soft);
+}
+/* Outlined only where text-stroke actually applies, so the word is never
+   invisible on engines that ignore it. */
+@supports (-webkit-text-stroke: 2px currentColor) {
+  h1 em { color: transparent; -webkit-text-stroke: 1.5px var(--accent-soft); }
+}
+
+h2 { font-size: clamp(36px, 4.6vw, 64px); line-height: 1.04; margin: 18px 0 0; }
+
+.sectionHead {
+  display: grid; grid-template-columns: 1.4fr .8fr; gap: 72px;
+  align-items: end; margin-bottom: 72px;
+}
+.sectionHead > p { margin: 0; color: var(--muted); font-size: 17px; line-height: 1.65; }
+
+/* Header ------------------------------------------------------------------- */
+
+.nav {
+  position: sticky; top: 0; z-index: 100;
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  border-bottom: 1px solid transparent;
+  transition: background .3s var(--ease), border-color .3s var(--ease),
+    backdrop-filter .3s var(--ease);
+}
+/* iOS Safari paints page content up behind the translucent status bar, but pins
+   top:0 elements BELOW it — so the header itself can never cover that strip, no
+   matter how it is positioned or padded. This shield is anchored to the header
+   and extends upward past its own top edge, travelling with it and painting the
+   strip solid. Off-screen and inert everywhere else. */
+.nav::before {
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: 100%; height: 220px;
+  background: transparent; pointer-events: none;
+  transition: background .3s var(--ease);
+}
+.nav[data-scrolled="true"]::before { background: var(--void); }
+
+.nav[data-scrolled="true"] {
+  background: rgba(5, 7, 12, .72);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom-color: var(--hairline);
+}
+.navInner { height: 74px; display: flex; align-items: center; justify-content: space-between; }
+.brand { display: flex; align-items: center; }
+.limitlessLogo { display: flex; }
+.logoVisual { display: flex; flex-direction: column; gap: 2px; line-height: 1; }
+.logoWord { font-size: 18px; font-weight: 800; letter-spacing: .08em; color: var(--text); }
+.logoWord b { color: var(--accent-soft); font-weight: 800; }
+.logoE {
+  display: inline-block; width: .64em; height: .72em; margin: 0 .03em;
+  background: linear-gradient(var(--accent-soft) 0 22%, transparent 22% 39%,
+    var(--accent-soft) 39% 61%, transparent 61% 78%, var(--accent-soft) 78% 100%);
+}
+.logoSub {
+  font-size: 7px; font-weight: 600; letter-spacing: .27em;
+  text-transform: uppercase; color: var(--muted);
+}
+.navLinks { display: flex; align-items: center; gap: 34px; font-size: 14px; font-weight: 500; }
+.navLinks > a:not(.navCta) { color: var(--muted); transition: color .2s var(--ease); }
+.navLinks > a:not(.navCta):hover { color: var(--text); }
+/* Solid white pill, matching the hero's primary action — the header CTA is the
+   page's single most-clicked control, so it gets the strongest treatment. */
+.navCta {
+  border-radius: 999px; padding: 10px 20px; font-weight: 600; letter-spacing: -.01em;
+  background: var(--text); color: var(--void);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .45);
+  transition: transform .2s var(--ease), box-shadow .2s var(--ease);
+}
+.navCta:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(0, 0, 0, .55); }
+
+/* Hero --------------------------------------------------------------------- */
+
+.hero { position: relative; isolation: isolate; padding: 152px 0 128px; overflow: hidden; }
+.heroAura {
+  position: absolute; z-index: -1; pointer-events: none;
+  width: 1100px; aspect-ratio: 1; right: -280px; top: -420px;
+  background: radial-gradient(circle, var(--glow), rgba(77,124,254,.10) 38%, rgba(77,124,254,.03) 60%, transparent 76%);
+}
+.hero::after {
+  content: ""; position: absolute; z-index: -1; left: 50%; bottom: -1px;
+  width: min(1200px, 90%); height: 1px; transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, var(--hairline-2), transparent);
+}
+.eyebrow {
+  display: flex; align-items: center; gap: 12px; margin: 0 0 32px;
+  font-size: 11px; font-weight: 700; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--accent-soft);
+}
+.eyebrow i { flex: none; width: 26px; height: 1px; background: var(--accent); }
+.heroBottom {
+  display: grid; grid-template-columns: 1.25fr 1fr; gap: 72px;
+  align-items: end; margin-top: 52px;
+}
+.heroCopy {
+  margin: 0; max-width: 620px; color: var(--muted);
+  font-size: clamp(17px, 1.5vw, 20px); line-height: 1.6; letter-spacing: -.01em;
+}
+.heroActions { display: flex; justify-content: flex-end; align-items: center; gap: 14px; flex-wrap: wrap; }
+.button {
+  display: inline-flex; align-items: center; gap: 14px;
+  padding: 15px 24px; border-radius: 999px;
+  font-size: 15px; font-weight: 600; letter-spacing: -.01em;
+  transition: transform .25s var(--ease), background .25s var(--ease),
+    border-color .25s var(--ease), box-shadow .25s var(--ease);
+}
+.button.primary {
+  background: var(--text); color: var(--void);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .5) inset, 0 12px 40px rgba(0, 0, 0, .5);
+}
+.button.primary:hover { transform: translateY(-2px); box-shadow: 0 18px 50px rgba(0, 0, 0, .6); }
+.button.ghost { border: 1px solid var(--hairline-2); color: var(--text); background: var(--raised); }
+.button.ghost:hover { background: var(--raised-2); border-color: var(--accent); transform: translateY(-2px); }
+.heroTrust {
+  display: flex; flex-wrap: wrap; gap: 10px 28px; margin-top: 48px;
+  font-size: 13px; color: var(--muted);
+}
+.heroTrust li { display: flex; align-items: center; gap: 10px; }
+.heroTrust li::before {
+  content: ""; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 10px var(--accent);
+}
+
+/* Ticker ------------------------------------------------------------------- */
+
+.ticker { overflow: hidden; border-bottom: 1px solid var(--hairline); padding: 18px 0; background: var(--surface); }
+.tickerTrack { display: flex; width: max-content; animation: ticker 34s linear infinite; }
+/* Two identical groups, each carrying its own trailing space, so translating
+   exactly -50% loops seamlessly instead of visibly jumping. */
+.tickerGroup { display: flex; align-items: center; }
+.tickerGroup span {
+  display: flex; align-items: center; gap: 36px; padding-right: 36px;
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  letter-spacing: .2em; text-transform: uppercase; color: var(--muted); white-space: nowrap;
+}
+.tickerGroup b { font-size: 9px; color: var(--accent); }
+@keyframes ticker { to { transform: translateX(-50%); } }
+
+/* Work — library grid ------------------------------------------------------ */
+
+.work { padding: 128px 0 140px; }
+/* Compact catalogue tiles rather than full-width case studies, so the section
+   stays the same visual weight as more projects are added over time. */
+.libGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
+
+/* min-width:0 throughout: the nowrap tag/domain lines would otherwise set a
+   min-content floor and push the card wider than a narrow viewport. */
+.libCard { display: flex; min-width: 0; }
+.libLink {
+  display: flex; flex-direction: column; width: 100%; min-width: 0;
+  border: 1px solid var(--hairline); border-radius: 18px; overflow: hidden;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .015));
+  transition: transform .35s var(--ease), border-color .35s var(--ease),
+    box-shadow .35s var(--ease);
+}
+.libLink:hover {
+  transform: translateY(-4px); border-color: var(--hairline-2);
+  box-shadow: 0 26px 60px rgba(0, 0, 0, .55), 0 0 40px rgba(77, 124, 254, .14);
+}
+
+.libMedia {
+  position: relative; display: block; overflow: hidden;
+  aspect-ratio: 16 / 9; background: var(--surface);
+  border-bottom: 1px solid var(--hairline);
+}
+.libMedia img { width: 100%; height: 100%; object-fit: cover; object-position: top; transition: transform .7s var(--ease); }
+.libLink:hover .libMedia img { transform: scale(1.04); }
+.libScrim {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, transparent 60%, rgba(5, 7, 12, .5) 100%);
+}
+.libOpen {
+  position: absolute; right: 12px; bottom: 12px;
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 8px 13px; border-radius: 999px;
+  background: rgba(5, 7, 12, .68); border: 1px solid var(--hairline-2);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  font-size: 11px; font-weight: 600; letter-spacing: -.01em; color: var(--text);
+  opacity: 0; transform: translateY(5px); transition: all .3s var(--ease);
+}
+.libLink:hover .libOpen, .libLink:focus-visible .libOpen { opacity: 1; transform: translateY(0); }
+
+/* Designed stand-in for a project whose screenshot isn't captured yet. */
+.libPending {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 12px; height: 100%; padding: 18px; text-align: center;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(77, 124, 254, .17), transparent 62%),
+    repeating-linear-gradient(90deg, var(--hairline) 0 1px, transparent 1px 44px),
+    repeating-linear-gradient(0deg, var(--hairline) 0 1px, transparent 1px 44px);
+}
+.libPendingMark {
+  width: 30px; height: 30px; border-radius: 9px; border: 1px solid var(--hairline-2);
+  background: linear-gradient(var(--accent-soft) 0 18%, transparent 18% 40%,
+    var(--accent-soft) 40% 60%, transparent 60% 82%, var(--accent-soft) 82% 100%);
+  background-size: 13px 15px; background-repeat: no-repeat; background-position: center;
+  box-shadow: 0 0 22px var(--glow);
+}
+.libPending b { font-size: 15px; font-weight: 600; letter-spacing: -.02em; }
+
+.libBody { display: flex; flex-direction: column; gap: 7px; padding: 18px 20px 20px; min-width: 0; }
+.libTop { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 3px; min-width: 0; }
+.libChip {
+  padding: 4px 10px; border-radius: 999px; font-size: 9.5px; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--accent-soft); border: 1px solid rgba(77, 124, 254, .4);
+  background: rgba(77, 124, 254, .1);
+}
+/* Shipped work gets a green badge so it reads apart from a concept at a glance. */
+.libChip.isLive {
+  color: #6ee7a8; border-color: rgba(110, 231, 168, .38); background: rgba(110, 231, 168, .1);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.libChip.isLive::before {
+  content: ""; width: 5px; height: 5px; border-radius: 50%;
+  background: #6ee7a8; box-shadow: 0 0 7px #6ee7a8;
+}
+.libDomain {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .06em;
+  color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  min-width: 0;
+}
+.libBody h3 { margin: 0; font-size: 20px; letter-spacing: -.035em; overflow-wrap: anywhere; }
+.libSector { font-size: 13px; color: var(--accent-soft); letter-spacing: -.005em; }
+.libSummary {
+  margin-top: 3px; font-size: 13.5px; line-height: 1.6; color: var(--muted);
+  /* Clamped so uneven copy lengths don't make the grid rows ragged. */
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
+}
+.libTags {
+  margin-top: auto; padding-top: 12px; border-top: 1px solid var(--hairline);
+  font-family: var(--mono); font-size: 10px; letter-spacing: .07em;
+  color: var(--muted); opacity: .85;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+}
+
+/* Why it matters ----------------------------------------------------------- */
+
+.why {
+  position: relative; overflow: hidden; padding: 140px 0;
+  background: linear-gradient(180deg, var(--void) 0%, #070b14 40%, #060910 100%);
+  border-block: 1px solid var(--hairline);
+}
+.whyAura {
+  position: absolute; pointer-events: none;
+  width: 900px; aspect-ratio: 1; right: -240px; top: -300px;
+  background: radial-gradient(circle, rgba(77,124,254,.30), rgba(77,124,254,.06) 45%, transparent 74%);
+}
+.whyGrid { position: relative; display: grid; grid-template-columns: .9fr 1.1fr; gap: 100px; }
+.whyCopy .lead {
+  margin: 0 0 64px; font-size: clamp(24px, 2.7vw, 34px);
+  line-height: 1.34; letter-spacing: -.03em; color: var(--text);
+}
+.valueGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+.valueGrid > div { padding-top: 20px; border-top: 1px solid var(--hairline); }
+.valueGrid b { font-family: var(--mono); font-size: 11px; color: var(--accent-soft); }
+.valueGrid h3 { margin: 18px 0 10px; font-size: 17px; letter-spacing: -.02em; }
+.valueGrid p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+
+/* Testimonials ------------------------------------------------------------- */
+
+.testimonials { padding: 128px 0 0; }
+.quoteGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+.quoteGrid figure {
+  margin: 0; padding: 34px; border-radius: var(--radius);
+  border: 1px solid var(--hairline); background: var(--raised);
+  display: flex; flex-direction: column; gap: 26px;
+}
+.quoteGrid blockquote { margin: 0; font-size: 19px; line-height: 1.55; letter-spacing: -.02em; }
+.quoteGrid figcaption { margin-top: auto; display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+.quoteGrid figcaption span { color: var(--muted); }
+
+/* Process ------------------------------------------------------------------ */
+
+.process { padding: 128px 0 140px; background: var(--surface); border-block: 1px solid var(--hairline); }
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: var(--radius); overflow: hidden; }
+.steps article { background: var(--void); padding: 40px 36px 48px; min-height: 260px; }
+.stepNum { font-family: var(--mono); font-size: 11px; color: var(--accent-soft); letter-spacing: .16em; }
+.steps h3 { margin: 48px 0 12px; font-size: 22px; letter-spacing: -.03em; }
+.steps p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.7; }
+.priceNote {
+  margin-top: 32px; padding: 28px 32px; border-radius: var(--radius);
+  border: 1px solid var(--hairline); background: var(--raised);
+  display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: baseline;
+}
+.priceNote b { font-size: 15px; white-space: nowrap; }
+.priceNote p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.7; }
+
+/* Founder ------------------------------------------------------------------ */
+
+.founder { padding: 128px 0; }
+.founderGrid { display: grid; grid-template-columns: .9fr 1.1fr; gap: 80px; align-items: start; margin-top: 20px; }
+.founderGrid h2 { display: flex; flex-direction: column; gap: 28px; margin: 0; }
+.founderName { display: flex; flex-direction: column; gap: 10px; }
+.founderName > span {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--muted); font-weight: 500;
+}
+.founderGrid p {
+  margin: 0; font-size: clamp(18px, 1.9vw, 23px); line-height: 1.6;
+  letter-spacing: -.02em; color: var(--muted);
+}
+
+/* Contact ------------------------------------------------------------------ */
+
+.contact {
+  position: relative; overflow: hidden; padding: 128px 0 140px;
+  border-top: 1px solid var(--hairline); scroll-margin-top: 80px;
+  background: linear-gradient(180deg, #060910 0%, #080c15 100%);
+}
+.contactAura {
+  position: absolute; pointer-events: none;
+  width: 1000px; aspect-ratio: 1; left: -260px; bottom: -420px;
+  background: radial-gradient(circle, rgba(77,124,254,.26), rgba(77,124,254,.05) 45%, transparent 74%);
+}
+.contactGrid { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
+.contactLead { margin: 24px 0 32px; color: var(--muted); font-size: 17px; line-height: 1.65; max-width: 440px; }
+.contactDirect { display: flex; flex-direction: column; gap: 12px; }
+.contactDirect a {
+  display: flex; flex-direction: column; gap: 5px; padding: 18px 22px;
+  border: 1px solid var(--hairline); border-radius: 16px; background: var(--raised);
+  font-size: 16px; font-weight: 600; letter-spacing: -.01em; overflow-wrap: anywhere;
+  transition: background .25s var(--ease), border-color .25s var(--ease), transform .25s var(--ease);
+}
+.contactDirect a:hover { background: var(--raised-2); border-color: var(--accent); transform: translateY(-2px); }
+.contactDirect span {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--muted); font-weight: 500;
+}
+
+/* Form --------------------------------------------------------------------- */
+
+.formPanel {
+  display: flex; flex-direction: column; gap: 18px; padding: 36px;
+  border-radius: 26px; border: 1px solid var(--hairline);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02));
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 40px 90px rgba(0, 0, 0, .5);
+}
+.formRow { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.field { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.field label {
+  font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--muted);
+}
+.field input, .field textarea {
+  width: 100%; font: inherit; font-size: 15px; color: var(--text);
+  background: rgba(5, 7, 12, .5); border: 1px solid var(--hairline);
+  border-radius: 12px; padding: 14px 16px;
+  transition: border-color .2s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
+}
+.field textarea { resize: vertical; min-height: 92px; }
+.field input::placeholder, .field textarea::placeholder { color: var(--muted); }
+.field input:focus-visible, .field textarea:focus-visible {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(77, 124, 254, .25); background: rgba(5, 7, 12, .75);
+}
+.field input:hover, .field textarea:hover { border-color: var(--hairline-2); }
+.field input[aria-invalid="true"], .field textarea[aria-invalid="true"] { border-color: #ff8a80; }
+.fieldError { font-size: 12.5px; font-weight: 500; color: #ff8a80; }
+.honeypot { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.formNote { margin: 0; font-size: 12.5px; line-height: 1.6; color: var(--muted); }
+.formSubmit {
+  font: inherit; cursor: pointer; display: flex; align-items: center;
+  justify-content: space-between; gap: 16px; width: 100%; padding: 17px 24px;
+  border: 0; border-radius: 999px; background: var(--text); color: var(--void);
+  font-size: 15px; font-weight: 600; letter-spacing: -.01em;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .5);
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease), opacity .2s var(--ease);
+}
+.formSubmit:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 18px 50px rgba(0, 0, 0, .6); }
+.formSubmit:disabled { opacity: .55; cursor: progress; }
+.formSubmit b { font-size: 17px; }
+.formError { margin: 0; font-size: 13.5px; line-height: 1.65; color: #ff8a80; }
+.formError a { text-decoration: underline; font-weight: 600; }
+.formDone { gap: 14px; }
+.formDone b { font-size: 24px; font-weight: 700; letter-spacing: -.035em; }
+.formDone p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.65; }
+.formDone a { color: var(--accent-soft); font-weight: 600; text-decoration: underline; }
+
+/* Footer ------------------------------------------------------------------- */
+
+.footer { border-top: 1px solid var(--hairline); background: var(--void); }
+.footerGrid {
+  min-height: 140px; display: grid; grid-template-columns: 1fr 1fr 1fr;
+  align-items: center; font-size: 13px;
+}
+.footerGrid p { margin: 0; text-align: center; color: var(--muted); }
+.footerContact { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; font-weight: 600; }
+.footerContact a:last-child { color: var(--muted); font-weight: 400; overflow-wrap: anywhere; }
+.footerContact a:hover { color: var(--accent-soft); }
+
+.mobileBar { display: none; }
+
+/* Responsive --------------------------------------------------------------- */
+
+@media (max-width: 980px) {
+  .sectionHead, .heroBottom, .whyGrid, .contactGrid, .founderGrid {
+    grid-template-columns: 1fr; gap: 28px;
+  }
+  .sectionHead { gap: 20px; margin-bottom: 56px; }
+  .heroActions { justify-content: flex-start; }
+  .whyGrid { gap: 60px; }
+  .valueGrid { grid-template-columns: 1fr; gap: 0; }
+  .valueGrid > div { display: grid; grid-template-columns: 42px 1fr; gap: 4px 12px; padding: 18px 0; }
+  .valueGrid h3 { margin: 0; }
+  .valueGrid p { grid-column: 2; margin-top: 6px; }
+  .steps { grid-template-columns: 1fr; }
+  .steps article { min-height: 0; padding: 32px 28px 36px; }
+  .contactGrid, .founderGrid { gap: 48px; }
+}
+
+@media (max-width: 620px) {
+  .shell { width: calc(100% - 32px); }
+  .navInner { height: 66px; }
+  .navLinks > a:not(.navCta) { display: none; }
+  /* The sticky bottom bar is the mobile CTA — a header pill would be a second
+     competing call to action on the same screen. */
+  .navCta { display: none; }
+  /* At desktop the aura is a corner accent; unscaled it washes the whole
+     narrow viewport, so pull it back to a glow behind the headline. */
+  .heroAura { width: 620px; right: -300px; top: -300px; opacity: .75; }
+  .whyAura { width: 520px; right: -220px; top: -200px; }
+  .contactAura { width: 560px; left: -240px; bottom: -300px; }
+  .hero { padding: 92px 0 84px; }
+  h1 { font-size: clamp(40px, 12.5vw, 62px); }
+  .heroBottom { margin-top: 36px; }
+  .heroActions { gap: 10px; width: 100%; }
+  .button { width: 100%; justify-content: space-between; }
+  .heroTrust { margin-top: 36px; gap: 10px 20px; font-size: 12.5px; }
+  .work, .process, .founder, .contact { padding: 84px 0 92px; }
+  .why { padding: 92px 0; }
+  .testimonials { padding-top: 84px; }
+  .libGrid { grid-template-columns: 1fr; gap: 18px; }
+  /* No hover on touch, so the overlay label is always visible. */
+  .libOpen { opacity: 1; transform: none; }
+  .priceNote { grid-template-columns: 1fr; gap: 12px; padding: 24px; }
+  .quoteGrid figure { padding: 26px; }
+  .formPanel { padding: 24px; border-radius: 20px; }
+  .formRow { grid-template-columns: 1fr; }
+  .footerGrid { grid-template-columns: 1fr 1fr; min-height: 120px; padding-bottom: 82px; }
+  .footerGrid p { display: none; }
+
+  .mobileBar {
+    display: grid; grid-template-columns: auto 1fr; gap: 8px;
+    position: fixed; z-index: 150;
+    /* Clears the home indicator and Safari's floating URL bar. */
+    left: calc(12px + env(safe-area-inset-left, 0px));
+    right: calc(12px + env(safe-area-inset-right, 0px));
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    transition: opacity .3s var(--ease), transform .3s var(--ease);
+  }
+  /* Hidden while the hero — and its own CTA — is still on screen. */
+  .mobileBar[data-visible="false"] { opacity: 0; transform: translateY(140%); pointer-events: none; }
+  .mobileBar a {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    padding: 15px 20px; border-radius: 999px; font-size: 14px; font-weight: 600;
+    letter-spacing: -.01em; box-shadow: 0 14px 40px rgba(0, 0, 0, .6);
+  }
+  .mobileBarCall {
+    background: rgba(10, 14, 23, .82); color: var(--text);
+    border: 1px solid var(--hairline-2);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  }
+  .mobileBarCta { background: var(--text); color: var(--void); justify-content: space-between; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .tickerTrack { animation: none; }
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
