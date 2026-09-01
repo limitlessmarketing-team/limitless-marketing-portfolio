@@ -2,7 +2,7 @@
 
 The portfolio site we send to prospective clients.
 
-**Live:** https://limitless-marketing-portfolio.vercel.app
+**Live:** https://nolimitwebs.com
 
 ---
 
@@ -54,12 +54,9 @@ Adding a portfolio project means adding an entry to `projects` in
 
 ## Connecting this repo to Vercel
 
-Worth doing once. It removes the most annoying limitation we hit: Vercel Drop
-creates a brand-new project every single time you upload, so updating the site
-meant making a new project and deleting the old one.
-
-In the Vercel project → **Settings → Git → Connect Git Repository** → pick this
-repo. Then set:
+**Done (2026-09-01).** The Vercel project `limitless-marketing-portfolio` is
+connected to this repo with Root Directory `site`, so every push to `main`
+deploys automatically. The settings, if it ever needs re-creating:
 
 | Setting          | Value           |
 | ---------------- | --------------- |
@@ -68,20 +65,18 @@ repo. Then set:
 | Build Command    | *(leave empty)* |
 | Output Directory | *(leave empty)* |
 
-The Root Directory is the important one. It tells Vercel to publish `site/` and
-ignore `source/`, which it can't build.
-
-After that, every push to `main` deploys automatically.
-
 ---
+
+## Lead capture
+
+**Live and verified (2026-09-01).** The contact form posts every submission to
+Supabase (`public.portfolio_leads`), and a database trigger emails the lead to
+contact@limitlessxcollective.com via Resend within seconds. Even if email ever
+breaks, the lead is still safely stored in the table. See `supabase/README.md`
+for the full design and rebuild instructions.
 
 ## Known gaps
 
-- **The live form doesn't store leads.** The static copy has no server behind
-  it, so submitting opens the visitor's email app with the details pre-filled,
-  addressed to founders@limitlessxcollective.com. If they don't press send in
-  their mail app, that lead is lost and there's no record of it. The `source/`
-  version stores every submission properly; it needs a host that runs code.
 - **No testimonials yet.** `testimonials` in `source/site.config.ts` is empty on
   purpose, and the section stays hidden until it has real quotes in it. Nothing
   invented ever ships.
